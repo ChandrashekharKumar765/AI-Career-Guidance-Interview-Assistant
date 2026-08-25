@@ -1,22 +1,22 @@
 import streamlit as st
 from google import genai
-from dotenv import load_dotenv
+
 from database_manager import create_database, get_counts
-import os
+
 
 
 # =========================
 # Load Environment
 # =========================
 
-load_dotenv()
+
 
 # Create database and tables
 create_database()
 
 # Gemini Client
 client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY")
+    api_key=st.secrets["GEMINI_API_KEY"]
 )
 
 
