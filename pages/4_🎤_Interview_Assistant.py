@@ -114,22 +114,50 @@ if st.button(
     # =========================
 
     prompt = f"""
-You are an AI Interviewer.
+You are a professional AI Interviewer.
 
-Candidate: {name}
-Role: {role}
-Difficulty: {level}
+Candidate Name: {name}
+Job Role: {role}
+Difficulty Level: {level}
 
-Generate concise interview preparation:
+Create a practical interview preparation guide specifically for this
+job role and difficulty level.
 
-1. 5 important interview questions with short expected answers
-2. 3 interview tips
-3. 3 common mistakes to avoid
-4. 3 final preparation tips
+Use exactly these sections:
 
-Keep answers short, practical and role-specific.
-Use bullet points.
-Avoid unnecessary explanations.
+1. Important Interview Questions
+Generate 5 important questions.
+
+For each question provide:
+- Interview Question
+- Expected Answer
+- One short explanation of what the interviewer is looking for
+
+Include questions appropriate to the selected difficulty level.
+
+2. Interview Tips
+Give 3 practical tips specifically useful for this role.
+
+3. Common Mistakes to Avoid
+Give 3 common mistakes candidates make in this type of interview
+and explain briefly how to avoid them.
+
+4. Final Preparation Tips
+Give 3 practical things the candidate should do before the interview.
+
+Make the questions role-specific rather than generic.
+
+For technical roles, include a good balance of:
+- Technical concepts
+- Programming/problem-solving
+- Projects
+- Practical application
+
+Keep the response focused and easy to study,
+but provide enough detail for the candidate to actually prepare.
+
+Use clear headings, numbered questions and bullet points.
+Do not give unnecessary motivational content.
 """
 
 
@@ -144,11 +172,11 @@ Avoid unnecessary explanations.
         try:
 
             response = client.models.generate_content(
-                model="gemini-3.5-flash-lite",
+                model="gemini-3.6-flash",
                 contents=prompt
             )
 
-        except Exception:
+        except Exception as e:
 
             st.error(
                 "⚠️ Gemini AI is temporarily unavailable. "

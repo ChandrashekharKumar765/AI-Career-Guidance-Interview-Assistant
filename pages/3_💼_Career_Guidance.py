@@ -114,29 +114,62 @@ if st.button(
         # =========================
 
         prompt = f"""
-You are an AI Career Counselor.
+You are a professional AI Career Counselor helping college students
+choose a realistic career path.
 
-Student:
+Student Information:
 Name: {name}
 Degree: {degree}
 Skills: {skills}
 Career Interest: {interest}
 
-Provide concise and practical career guidance in exactly these sections:
+Analyze the student's current skills and interests and provide
+personalized, practical and realistic career guidance.
+
+Use exactly these sections:
 
 1. Best Career Option
+- Recommend the most suitable career.
+- Explain briefly why it matches the student's background.
+- Mention 2-3 suitable entry-level job roles.
+
 2. Expected Salary Range
+- Give a realistic fresher salary range in India.
+- Mention that salary depends on skills, location, company and experience.
+
 3. Top Skills to Learn
+- List the most important technical and professional skills.
+- Prioritize the skills in the order they should be learned.
+
 4. 6-Month Roadmap
+- Month 1
+- Month 2
+- Month 3
+- Month 4
+- Month 5
+- Month 6
+
+Give practical learning goals and project work for each month.
+
 5. Recommended Certifications
+- Suggest relevant certifications or courses.
+- Mention which ones are useful for beginners.
+
 6. Suitable Companies
+- Suggest companies where the student could eventually apply.
+- Include both service-based and product-based companies where appropriate.
+
 7. Interview Preparation Tips
+- Give practical interview preparation advice.
+- Mention technical, HR and project-related preparation.
 
-Keep each section short and useful.
-Use bullet points where appropriate.
-Avoid unnecessary explanations.
+Make the guidance detailed enough to be genuinely useful to a student,
+but keep it focused and easy to read.
+
+Use clear headings and bullet points.
+Do not give generic motivational statements.
+Base the recommendations on the student's provided degree, skills and interest.
 """
-
 
         # =========================
         # Gemini AI
@@ -145,14 +178,15 @@ Avoid unnecessary explanations.
         try:
 
             response = client.models.generate_content(
-                model="gemini-3.5-flash-lite",
+                model="gemini-3.6-flash",
                 contents=prompt
             )
 
         except Exception as e:
 
             st.error(
-                "⚠️ Gemini AI is temporarily unavailable."
+                "⚠️ Gemini AI is temporarily unavailable. "
+                "Please try again."
             )
 
             st.stop()
@@ -265,7 +299,6 @@ Avoid unnecessary explanations.
         Spacer(1, 8)
     )
 
-
     story.append(
         Paragraph(
             f"<b>Degree:</b> {degree}",
@@ -276,7 +309,6 @@ Avoid unnecessary explanations.
     story.append(
         Spacer(1, 8)
     )
-
 
     story.append(
         Paragraph(
