@@ -1,5 +1,9 @@
 # 🤖 AI Career Guidance & Interview Assistant using Gemini AI
 
+### 👨‍💻 Developed by Chandra Shekhar
+**B.Tech Computer Science & Engineering**  
+**Major Project 2026**
+
 An AI-powered career assistance platform designed to help students with resume analysis, career guidance, and interview preparation using Google's Gemini AI.
 
 ---
@@ -30,17 +34,20 @@ The application also uses SQLite for storing user activity and ReportLab for gen
 ## ✨ Key Features
 
 ### 🔐 User Login & Authentication
+
 - Username and password based login.
 - Protected application pages.
 - Logout functionality.
 
 ### 📊 Dashboard
+
 - Displays total resume analyses.
 - Displays total career guidance reports.
 - Displays total interview sessions.
 - Provides an overview of the complete platform.
 
 ### 📄 AI Resume Analysis
+
 Users can upload a PDF resume and receive:
 
 - Resume Score
@@ -63,7 +70,7 @@ Students can enter:
 
 The AI provides:
 
-- Best Career Option
+- Best Career Options
 - Expected Salary Range
 - Skills to Learn
 - 6-Month Roadmap
@@ -122,10 +129,6 @@ AI Career Guidance & Interview Assistant
 ├── database_manager.py
 ├── requirements.txt
 ├── README.md
-├── .env
-│
-├── database
-│   └── project.db
 │
 ├── pages
 │   ├── 1_Dashboard.py
