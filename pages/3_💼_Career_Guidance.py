@@ -1,7 +1,5 @@
 import streamlit as st
-import os
 
-from dotenv import load_dotenv
 from google import genai
 from database_manager import save_career
 from auth import require_login, show_logout
@@ -34,10 +32,18 @@ show_logout()
 # Gemini Configuration
 # =========================
 
-load_dotenv()
-
 client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY")
+    api_key=st.secrets["GEMINI_API_KEY"]
+)
+
+
+# =========================
+# Get Logged-in User
+# =========================
+
+username = st.session_state.get(
+    "username",
+    "User"
 )
 
 
@@ -56,13 +62,21 @@ st.write(
 # Student Details
 # =========================
 
-name = st.text_input("Your Name")
+name = st.text_input(
+    "Your Name"
+)
 
-degree = st.text_input("Degree")
+degree = st.text_input(
+    "Degree"
+)
 
-skills = st.text_area("Your Skills")
+skills = st.text_area(
+    "Your Skills"
+)
 
-interest = st.text_input("Career Interest")
+interest = st.text_input(
+    "Career Interest"
+)
 
 
 # =========================
@@ -74,39 +88,87 @@ if st.button(
     use_container_width=True
 ):
 
-    st.success(
-        "🤖 AI is generating career guidance..."
-    )
+    # =========================
+    # Validate Input
+    # =========================
+
+    if not name or not degree or not skills or not interest:
+
+        st.warning(
+            "⚠️ Please fill in all the details before generating guidance."
+        )
+
+        st.stop()
 
 
-    prompt = f"""
+    # =========================
+    # Loading Message
+    # =========================
+
+    with st.spinner(
+        "🤖 AI is generating your career guidance..."
+    ):
+
+        # =========================
+        # AI Prompt
+        # =========================
+
+        prompt = f"""
 You are an AI Career Counselor.
 
-Student Name: {name}
+Student:
+Name: {name}
 Degree: {degree}
 Skills: {skills}
 Career Interest: {interest}
 
-Provide:
+Provide concise and practical career guidance in exactly these sections:
 
 1. Best Career Option
 2. Expected Salary Range
-3. Skills to Learn
-4. 6 Month Roadmap
-5. Best Certifications
-6. Best Companies
+3. Top Skills to Learn
+4. 6-Month Roadmap
+5. Recommended Certifications
+6. Suitable Companies
 7. Interview Preparation Tips
+
+Keep each section short and useful.
+Use bullet points where appropriate.
+Avoid unnecessary explanations.
 """
 
 
+        # =========================
+        # Gemini AI
+        # =========================
+
+        try:
+
+            response = client.models.generate_content(
+                model="gemini-3.5-flash-lite",
+                contents=prompt
+            )
+
+        except Exception as e:
+
+            st.error(
+                "⚠️ Gemini AI is temporarily unavailable."
+            )
+
+            st.stop()
+
+
     # =========================
-    # Gemini AI
+    # Check Response
     # =========================
 
-    response = client.models.generate_content(
-        model="models/gemini-3.5-flash",
-        contents=prompt
-    )
+    if response is None or not response.text:
+
+        st.error(
+            "⚠️ Gemini did not return a response. Please try again."
+        )
+
+        st.stop()
 
 
     # =========================
@@ -114,6 +176,7 @@ Provide:
     # =========================
 
     save_career(
+        username,
         name,
         degree,
         skills,
@@ -128,9 +191,13 @@ Provide:
 
     st.divider()
 
-    st.subheader("💼 AI Career Guidance")
+    st.subheader(
+        "💼 AI Career Guidance"
+    )
 
-    st.write(response.text)
+    st.write(
+        response.text
+    )
 
     st.divider()
 
@@ -167,6 +234,10 @@ Provide:
     story = []
 
 
+    # =========================
+    # PDF Title
+    # =========================
+
     story.append(
         Paragraph(
             "AI Career Guidance Report",
@@ -178,6 +249,10 @@ Provide:
         Spacer(1, 20)
     )
 
+
+    # =========================
+    # Student Information
+    # =========================
 
     story.append(
         Paragraph(
@@ -214,6 +289,10 @@ Provide:
         Spacer(1, 20)
     )
 
+
+    # =========================
+    # AI Guidance Heading
+    # =========================
 
     story.append(
         Paragraph(
@@ -256,7 +335,10 @@ Provide:
             )
 
 
+    # =========================
     # Build PDF
+    # =========================
+
     doc.build(story)
 
 
@@ -264,7 +346,10 @@ Provide:
     # Read PDF
     # =========================
 
-    with open(pdf_file, "rb") as file:
+    with open(
+        pdf_file,
+        "rb"
+    ) as file:
 
         pdf_data = file.read()
 

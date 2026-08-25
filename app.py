@@ -77,7 +77,9 @@ st.divider()
 # Get Database Counts
 # =========================
 
-resume_count, career_count, interview_count = get_counts()
+username = st.session_state.get("username", "User")
+
+resume_count, career_count, interview_count = get_counts(username)
 
 
 # =========================

@@ -1,4 +1,5 @@
 import streamlit as st
+
 from database_manager import get_counts
 from auth import require_login, show_logout
 
@@ -23,10 +24,17 @@ show_logout()
 
 
 # =========================
+# Get Logged-in User
+# =========================
+
+username = st.session_state.get("username", "User")
+
+
+# =========================
 # Get Real Data
 # =========================
 
-resume_count, career_count, interview_count = get_counts()
+resume_count, career_count, interview_count = get_counts(username)
 
 
 # =========================
@@ -103,8 +111,6 @@ st.markdown(
 # =========================
 # Welcome Message
 # =========================
-
-username = st.session_state.get("username", "User")
 
 st.success(
     f"👋 Welcome, **{username}**! Choose a module below to get started."
@@ -260,19 +266,31 @@ step1, step2, step3, step4 = st.columns(4)
 
 
 with step1:
-    st.info("**1️⃣ Login**\n\nSecurely access your AI platform.")
+
+    st.info(
+        "**1️⃣ Login**\n\nSecurely access your AI platform."
+    )
 
 
 with step2:
-    st.info("**2️⃣ Choose Module**\n\nResume, Career or Interview.")
+
+    st.info(
+        "**2️⃣ Choose Module**\n\nResume, Career or Interview."
+    )
 
 
 with step3:
-    st.info("**3️⃣ Generate AI Result**\n\nGemini analyzes your information.")
+
+    st.info(
+        "**3️⃣ Generate AI Result**\n\nGemini analyzes your information."
+    )
 
 
 with step4:
-    st.info("**4️⃣ Save & Download**\n\nResults are stored and available as reports.")
+
+    st.info(
+        "**4️⃣ Save & Download**\n\nResults are stored and available as reports."
+    )
 
 
 st.divider()

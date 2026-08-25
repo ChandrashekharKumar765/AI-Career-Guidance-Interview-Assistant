@@ -1,7 +1,5 @@
 import streamlit as st
-import os
 
-from dotenv import load_dotenv
 from google import genai
 from database_manager import save_interview
 from auth import require_login, show_logout
@@ -34,10 +32,8 @@ show_logout()
 # Gemini Configuration
 # =========================
 
-load_dotenv()
-
 client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY")
+    api_key=st.secrets["GEMINI_API_KEY"]
 )
 
 
@@ -121,7 +117,7 @@ Give the response in a clear and structured format.
     try:
 
         response = client.models.generate_content(
-            model="gemini-3.5-flash",
+            model="gemini-3.5-flash-lite",
             contents=prompt
         )
 
@@ -153,12 +149,15 @@ Give the response in a clear and structured format.
     # Save to Database
     # =========================
 
+    username = st.session_state.get("username", "User")
+
     save_interview(
+        username,
         name or "Unknown",
         role,
         level,
         response.text
-    )
+)
 
 
     # =========================

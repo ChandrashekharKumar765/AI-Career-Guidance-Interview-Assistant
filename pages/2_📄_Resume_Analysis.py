@@ -1,7 +1,5 @@
 import streamlit as st
-import os
 
-from dotenv import load_dotenv
 from google import genai
 from PyPDF2 import PdfReader
 from database_manager import save_resume
@@ -35,10 +33,8 @@ show_logout()
 # Load API Key
 # =========================
 
-load_dotenv()
-
 client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY")
+    api_key=st.secrets["GEMINI_API_KEY"]
 )
 
 
@@ -121,7 +117,7 @@ Resume:
         # =========================
 
         response = client.models.generate_content(
-            model="models/gemini-3.5-flash",
+            model="gemini-3.5-flash-lite",
             contents=prompt
         )
 
@@ -130,10 +126,13 @@ Resume:
         # Save to Database
         # =========================
 
+        username = st.session_state.get("username", "User")
+
         save_resume(
+            username,
             uploaded_file.name,
             response.text
-        )
+)
 
 
         st.divider()

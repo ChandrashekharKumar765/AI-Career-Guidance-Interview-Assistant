@@ -1,5 +1,11 @@
 import sqlite3
 import os
+import hashlib
+
+
+# =========================
+# Database Configuration
+# =========================
 
 DB_DIR = "database"
 DB_NAME = os.path.join(DB_DIR, "project.db")
@@ -7,22 +13,41 @@ DB_NAME = os.path.join(DB_DIR, "project.db")
 os.makedirs(DB_DIR, exist_ok=True)
 
 
+# =========================
+# Password Hashing
+# =========================
+
+def hash_password(password):
+    return hashlib.sha256(
+        password.encode("utf-8")
+    ).hexdigest()
+
+
+# =========================
+# Create Database
+# =========================
+
 def create_database():
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
+    # Resume History
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS resume_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
         file_name TEXT,
         analysis TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
 
+    # Career History
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS career_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
         name TEXT,
         degree TEXT,
         skills TEXT,
@@ -32,9 +57,11 @@ def create_database():
     )
     """)
 
+    # Interview History
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS interview_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
         name TEXT,
         role TEXT,
         level TEXT,
@@ -43,116 +70,300 @@ def create_database():
     )
     """)
 
+    # Users
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
     conn.commit()
     conn.close()
 
 
-def save_resume(file_name, analysis):
+# =========================
+# Register User
+# =========================
+
+def register_user(username, password):
+
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    password_hash = hash_password(password)
+
+    try:
+
+        cursor.execute(
+            """
+            INSERT INTO users (username, password)
+            VALUES (?, ?)
+            """,
+            (username, password_hash)
+        )
+
+        conn.commit()
+
+        return True, "Registration successful."
+
+    except sqlite3.IntegrityError:
+
+        return False, "Username already exists."
+
+    finally:
+
+        conn.close()
+
+
+# =========================
+# Verify Login
+# =========================
+
+def verify_user(username, password):
+
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    password_hash = hash_password(password)
+
+    cursor.execute(
+        """
+        SELECT username
+        FROM users
+        WHERE username = ? AND password = ?
+        """,
+        (username, password_hash)
+    )
+
+    user = cursor.fetchone()
+
+    conn.close()
+
+    if user:
+        return True
+
+    return False
+
+
+# =========================
+# Save Resume
+# =========================
+
+def save_resume(username, file_name, analysis):
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
     cursor.execute(
-        "INSERT INTO resume_history (file_name, analysis) VALUES (?, ?)",
-        (file_name, analysis)
+        """
+        INSERT INTO resume_history
+        (username, file_name, analysis)
+        VALUES (?, ?, ?)
+        """,
+        (username, file_name, analysis)
     )
 
     conn.commit()
     conn.close()
 
 
-def save_career(name, degree, skills, interest, guidance):
+# =========================
+# Save Career
+# =========================
+
+def save_career(
+    username,
+    name,
+    degree,
+    skills,
+    interest,
+    guidance
+):
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
-    cursor.execute("""
-    INSERT INTO career_history
-    (name, degree, skills, interest, guidance)
-    VALUES (?, ?, ?, ?, ?)
-    """, (name, degree, skills, interest, guidance))
+    cursor.execute(
+        """
+        INSERT INTO career_history
+        (username, name, degree, skills, interest, guidance)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            username,
+            name,
+            degree,
+            skills,
+            interest,
+            guidance
+        )
+    )
 
     conn.commit()
     conn.close()
 
 
-def save_interview(name, role, level, questions):
+# =========================
+# Save Interview
+# =========================
+
+def save_interview(
+    username,
+    name,
+    role,
+    level,
+    questions
+):
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
-    cursor.execute("""
-    INSERT INTO interview_history
-    (name, role, level, questions)
-    VALUES (?, ?, ?, ?)
-    """, (name, role, level, questions))
+    cursor.execute(
+        """
+        INSERT INTO interview_history
+        (username, name, role, level, questions)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            username,
+            name,
+            role,
+            level,
+            questions
+        )
+    )
 
     conn.commit()
     conn.close()
 
 
-def get_counts():
+# =========================
+# Dashboard Counts
+# =========================
+
+def get_counts(username):
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
-    cursor.execute("SELECT COUNT(*) FROM resume_history")
+    cursor.execute(
+        """
+        SELECT COUNT(*)
+        FROM resume_history
+        WHERE username = ?
+        """,
+        (username,)
+    )
+
     resume_count = cursor.fetchone()[0]
 
-    cursor.execute("SELECT COUNT(*) FROM career_history")
+    cursor.execute(
+        """
+        SELECT COUNT(*)
+        FROM career_history
+        WHERE username = ?
+        """,
+        (username,)
+    )
+
     career_count = cursor.fetchone()[0]
 
-    cursor.execute("SELECT COUNT(*) FROM interview_history")
+    cursor.execute(
+        """
+        SELECT COUNT(*)
+        FROM interview_history
+        WHERE username = ?
+        """,
+        (username,)
+    )
+
     interview_count = cursor.fetchone()[0]
 
     conn.close()
 
-    return resume_count, career_count, interview_count
+    return (
+        resume_count,
+        career_count,
+        interview_count
+    )
 
 
 # =========================
-# HISTORY FUNCTIONS
+# Resume History
 # =========================
 
-def get_resume_history():
+def get_resume_history(username):
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
-    cursor.execute("""
-    SELECT file_name, analysis, created_at
-    FROM resume_history
-    ORDER BY id DESC
-    """)
+    cursor.execute(
+        """
+        SELECT file_name, analysis, created_at
+        FROM resume_history
+        WHERE username = ?
+        ORDER BY id DESC
+        """,
+        (username,)
+    )
 
     data = cursor.fetchall()
+
     conn.close()
 
     return data
 
 
-def get_career_history():
+# =========================
+# Career History
+# =========================
+
+def get_career_history(username):
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
-    cursor.execute("""
-    SELECT name, degree, skills, interest, guidance, created_at
-    FROM career_history
-    ORDER BY id DESC
-    """)
+    cursor.execute(
+        """
+        SELECT name, degree, skills, interest, guidance, created_at
+        FROM career_history
+        WHERE username = ?
+        ORDER BY id DESC
+        """,
+        (username,)
+    )
 
     data = cursor.fetchall()
+
     conn.close()
 
     return data
 
 
-def get_interview_history():
+# =========================
+# Interview History
+# =========================
+
+def get_interview_history(username):
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
-    cursor.execute("""
-    SELECT name, role, level, questions, created_at
-    FROM interview_history
-    ORDER BY id DESC
-    """)
+    cursor.execute(
+        """
+        SELECT name, role, level, questions, created_at
+        FROM interview_history
+        WHERE username = ?
+        ORDER BY id DESC
+        """,
+        (username,)
+    )
 
     data = cursor.fetchall()
+
     conn.close()
 
     return data
