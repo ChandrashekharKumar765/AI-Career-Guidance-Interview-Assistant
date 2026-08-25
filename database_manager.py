@@ -1,6 +1,10 @@
 import sqlite3
+import os
 
-DB_NAME = "database/project.db"
+DB_DIR = "database"
+DB_NAME = os.path.join(DB_DIR, "project.db")
+
+os.makedirs(DB_DIR, exist_ok=True)
 
 
 def create_database():
