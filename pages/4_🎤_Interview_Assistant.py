@@ -38,6 +38,16 @@ client = genai.Client(
 
 
 # =========================
+# Get Logged-in User
+# =========================
+
+username = st.session_state.get(
+    "username",
+    "User"
+)
+
+
+# =========================
 # Page Header
 # =========================
 
@@ -52,7 +62,9 @@ st.write(
 # User Details
 # =========================
 
-name = st.text_input("Your Name")
+name = st.text_input(
+    "Your Name"
+)
 
 role = st.selectbox(
     "Job Role",
@@ -84,27 +96,40 @@ if st.button(
     use_container_width=True
 ):
 
+    # =========================
+    # Validate Input
+    # =========================
+
+    if not name:
+
+        st.warning(
+            "⚠️ Please enter your name before starting the interview."
+        )
+
+        st.stop()
+
+
+    # =========================
+    # AI Prompt
+    # =========================
+
     prompt = f"""
 You are an AI Interviewer.
 
-Candidate Name:
-{name}
+Candidate: {name}
+Role: {role}
+Difficulty: {level}
 
-Role:
-{role}
+Generate concise interview preparation:
 
-Difficulty:
-{level}
+1. 5 important interview questions with short expected answers
+2. 3 interview tips
+3. 3 common mistakes to avoid
+4. 3 final preparation tips
 
-Generate:
-
-1. 10 Interview Questions
-2. Expected Answers
-3. Interview Tips
-4. Common Mistakes
-5. Final Preparation Advice
-
-Give the response in a clear and structured format.
+Keep answers short, practical and role-specific.
+Use bullet points.
+Avoid unnecessary explanations.
 """
 
 
@@ -112,23 +137,25 @@ Give the response in a clear and structured format.
     # Gemini AI
     # =========================
 
-    response = None
+    with st.spinner(
+        "🤖 AI is preparing your interview..."
+    ):
 
-    try:
+        try:
 
-        response = client.models.generate_content(
-            model="gemini-3.5-flash-lite",
-            contents=prompt
-        )
+            response = client.models.generate_content(
+                model="gemini-3.5-flash-lite",
+                contents=prompt
+            )
 
-    except Exception as e:
+        except Exception:
 
-        st.error(
-            f"⚠️ Gemini AI is temporarily unavailable.\n\n"
-            f"Error: {e}"
-        )
+            st.error(
+                "⚠️ Gemini AI is temporarily unavailable. "
+                "Please try again."
+            )
 
-        st.stop()
+            st.stop()
 
 
     # =========================
@@ -149,15 +176,13 @@ Give the response in a clear and structured format.
     # Save to Database
     # =========================
 
-    username = st.session_state.get("username", "User")
-
     save_interview(
         username,
-        name or "Unknown",
+        name,
         role,
         level,
         response.text
-)
+    )
 
 
     # =========================
@@ -166,9 +191,13 @@ Give the response in a clear and structured format.
 
     st.divider()
 
-    st.subheader("🎯 AI Interview Preparation")
+    st.subheader(
+        "🎯 AI Interview Preparation"
+    )
 
-    st.write(response.text)
+    st.write(
+        response.text
+    )
 
     st.divider()
 
@@ -205,6 +234,10 @@ Give the response in a clear and structured format.
     story = []
 
 
+    # =========================
+    # PDF Title
+    # =========================
+
     story.append(
         Paragraph(
             "AI Interview Preparation Report",
@@ -217,9 +250,13 @@ Give the response in a clear and structured format.
     )
 
 
+    # =========================
+    # Candidate Information
+    # =========================
+
     story.append(
         Paragraph(
-            f"<b>Candidate Name:</b> {name or 'Unknown'}",
+            f"<b>Candidate Name:</b> {name}",
             styles["Normal"]
         )
     )
@@ -227,7 +264,6 @@ Give the response in a clear and structured format.
     story.append(
         Spacer(1, 8)
     )
-
 
     story.append(
         Paragraph(
@@ -240,7 +276,6 @@ Give the response in a clear and structured format.
         Spacer(1, 8)
     )
 
-
     story.append(
         Paragraph(
             f"<b>Difficulty:</b> {level}",
@@ -252,6 +287,10 @@ Give the response in a clear and structured format.
         Spacer(1, 20)
     )
 
+
+    # =========================
+    # AI Preparation Heading
+    # =========================
 
     story.append(
         Paragraph(
@@ -305,7 +344,10 @@ Give the response in a clear and structured format.
     # Read PDF
     # =========================
 
-    with open(pdf_file, "rb") as file:
+    with open(
+        pdf_file,
+        "rb"
+    ) as file:
 
         pdf_data = file.read()
 
