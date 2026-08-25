@@ -20,11 +20,18 @@ create_database()
 
 st.set_page_config(
     page_title="Login",
-    page_icon="🔐"
+    page_icon="🔐",
+    layout="centered"
 )
 
 
-st.title("🔐 AI Career Guidance & Interview Assistant")
+# =========================
+# Header
+# =========================
+
+st.title(
+    "🔐 AI Career Guidance & Interview Assistant"
+)
 
 st.markdown(
     "### Login or create a new account"
@@ -36,7 +43,10 @@ st.markdown(
 # =========================
 
 login_tab, register_tab = st.tabs(
-    ["🔑 Login", "🆕 Register"]
+    [
+        "🔑 Login",
+        "🆕 Register"
+    ]
 )
 
 
@@ -46,7 +56,9 @@ login_tab, register_tab = st.tabs(
 
 with login_tab:
 
-    st.subheader("🔑 User Login")
+    st.subheader(
+        "🔑 User Login"
+    )
 
     username = st.text_input(
         "Username",
@@ -70,16 +82,20 @@ with login_tab:
                 "⚠️ Please enter username and password."
             )
 
-        elif verify_user(username, password):
+        elif verify_user(
+            username.strip(),
+            password
+        ):
 
             st.session_state["logged_in"] = True
-            st.session_state["username"] = username
+
+            st.session_state["username"] = (
+                username.strip()
+            )
 
             st.success(
                 "✅ Login Successful"
             )
-
-            st.balloons()
 
             st.info(
                 "You can now access the protected pages."
@@ -100,7 +116,9 @@ with login_tab:
 
 with register_tab:
 
-    st.subheader("🆕 Create New Account")
+    st.subheader(
+        "🆕 Create New Account"
+    )
 
     new_username = st.text_input(
         "Choose Username",
@@ -124,13 +142,17 @@ with register_tab:
         use_container_width=True
     ):
 
+        # =========================
+        # Validation
+        # =========================
+
         if not new_username or not new_password:
 
             st.warning(
                 "⚠️ Please fill all required fields."
             )
 
-        elif len(new_username) < 3:
+        elif len(new_username.strip()) < 3:
 
             st.warning(
                 "⚠️ Username must contain at least 3 characters."
@@ -150,6 +172,10 @@ with register_tab:
 
         else:
 
+            # =========================
+            # Register User
+            # =========================
+
             success, message = register_user(
                 new_username.strip(),
                 new_password
@@ -158,8 +184,11 @@ with register_tab:
             if success:
 
                 st.success(
-                    "✅ Account created successfully! "
-                    "Please go to Login and sign in."
+                    "✅ Account created successfully!"
+                )
+
+                st.info(
+                    "Please go to the Login tab and sign in."
                 )
 
             else:
