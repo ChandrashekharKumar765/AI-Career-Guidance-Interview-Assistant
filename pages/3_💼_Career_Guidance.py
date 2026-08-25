@@ -36,15 +36,7 @@ client = genai.Client(
     api_key=st.secrets["GEMINI_API_KEY"]
 )
 
-
-# =========================
-# Get Logged-in User
-# =========================
-
-username = st.session_state.get(
-    "username",
-    "User"
-)
+username = st.session_state.get("username", "User")
 
 
 # =========================
@@ -54,7 +46,7 @@ username = st.session_state.get(
 st.title("💼 AI Career Guidance")
 
 st.write(
-    "Get personalized AI-powered career guidance."
+    "Get personalized and detailed AI-powered career guidance."
 )
 
 
@@ -62,21 +54,13 @@ st.write(
 # Student Details
 # =========================
 
-name = st.text_input(
-    "Your Name"
-)
+name = st.text_input("Your Name")
 
-degree = st.text_input(
-    "Degree"
-)
+degree = st.text_input("Degree")
 
-skills = st.text_area(
-    "Your Skills"
-)
+skills = st.text_area("Your Skills")
 
-interest = st.text_input(
-    "Career Interest"
-)
+interest = st.text_input("Career Interest")
 
 
 # =========================
@@ -88,118 +72,109 @@ if st.button(
     use_container_width=True
 ):
 
-    # =========================
-    # Validate Input
-    # =========================
-
     if not name or not degree or not skills or not interest:
 
         st.warning(
-            "⚠️ Please fill in all the details before generating guidance."
+            "⚠️ Please fill in all the details."
         )
 
         st.stop()
 
 
     # =========================
-    # Loading Message
+    # AI Prompt
     # =========================
 
-    with st.spinner(
-        "🤖 AI is generating your career guidance..."
-    ):
-
-        # =========================
-        # AI Prompt
-        # =========================
-
-        prompt = f"""
-You are a professional AI Career Counselor helping college students
-choose a realistic career path.
+    prompt = f"""
+You are an expert AI Career Counselor.
 
 Student Information:
+
 Name: {name}
 Degree: {degree}
 Skills: {skills}
 Career Interest: {interest}
 
-Analyze the student's current skills and interests and provide
-personalized, practical and realistic career guidance.
+Create a detailed and practical personalized career report.
 
-Use exactly these sections:
+Include:
 
-1. Best Career Option
-- Recommend the most suitable career.
-- Explain briefly why it matches the student's background.
-- Mention 2-3 suitable entry-level job roles.
+1. Best Career Options
+   Explain the most suitable roles and why they fit the student.
 
 2. Expected Salary Range
-- Give a realistic fresher salary range in India.
-- Mention that salary depends on skills, location, company and experience.
+   Give realistic entry-level and experienced salary ranges.
 
-3. Top Skills to Learn
-- List the most important technical and professional skills.
-- Prioritize the skills in the order they should be learned.
+3. Skills to Learn
+   Explain the important technical and soft skills.
 
 4. 6-Month Roadmap
-- Month 1
-- Month 2
-- Month 3
-- Month 4
-- Month 5
-- Month 6
-
-Give practical learning goals and project work for each month.
+   Divide the roadmap month-by-month with clear learning goals,
+   projects and practice.
 
 5. Recommended Certifications
-- Suggest relevant certifications or courses.
-- Mention which ones are useful for beginners.
+   Suggest useful certifications and explain their relevance.
 
 6. Suitable Companies
-- Suggest companies where the student could eventually apply.
-- Include both service-based and product-based companies where appropriate.
+   Suggest companies that hire for the recommended roles.
 
-7. Interview Preparation Tips
-- Give practical interview preparation advice.
-- Mention technical, HR and project-related preparation.
+7. Project Suggestions
+   Suggest practical projects that can strengthen the student's resume.
 
-Make the guidance detailed enough to be genuinely useful to a student,
-but keep it focused and easy to read.
+8. Interview Preparation
+   Explain what the student should prepare for interviews.
 
-Use clear headings and bullet points.
-Do not give generic motivational statements.
-Base the recommendations on the student's provided degree, skills and interest.
+9. Final Career Advice
+   Give clear actionable next steps.
+
+Use headings, bullet points and useful explanations.
+Make the report detailed enough to be genuinely useful.
 """
 
-        # =========================
-        # Gemini AI
-        # =========================
 
-        try:
+    # =========================
+    # Streaming Response
+    # =========================
 
-            response = client.models.generate_content(
-                model="gemini-3.6-flash",
-                contents=prompt
-            )
+    st.divider()
+    st.subheader("💼 AI Career Guidance")
 
-        except Exception as e:
+    response_placeholder = st.empty()
 
-            st.error(
-                "⚠️ Gemini AI is temporarily unavailable. "
-                "Please try again."
-            )
+    full_response = ""
 
-            st.stop()
+    try:
+
+        for chunk in client.models.generate_content_stream(
+            model="gemini-3.5-flash-lite",
+            contents=prompt
+        ):
+
+            if chunk.text:
+
+                full_response += chunk.text
+
+                response_placeholder.markdown(
+                    full_response
+                )
+
+    except Exception as e:
+
+        st.error(
+            f"⚠️ Gemini AI Error: {e}"
+        )
+
+        st.stop()
 
 
     # =========================
     # Check Response
     # =========================
 
-    if response is None or not response.text:
+    if not full_response.strip():
 
         st.error(
-            "⚠️ Gemini did not return a response. Please try again."
+            "⚠️ Gemini did not return a response."
         )
 
         st.stop()
@@ -215,23 +190,9 @@ Base the recommendations on the student's provided degree, skills and interest.
         degree,
         skills,
         interest,
-        response.text
+        full_response
     )
 
-
-    # =========================
-    # Display Result
-    # =========================
-
-    st.divider()
-
-    st.subheader(
-        "💼 AI Career Guidance"
-    )
-
-    st.write(
-        response.text
-    )
 
     st.divider()
 
@@ -246,14 +207,14 @@ Base the recommendations on the student's provided degree, skills and interest.
 
     st.download_button(
         label="📥 Download Guidance (TXT)",
-        data=response.text,
+        data=full_response,
         file_name="Career_Guidance.txt",
         mime="text/plain"
     )
 
 
     # =========================
-    # PDF REPORT
+    # PDF Report
     # =========================
 
     pdf_file = "Career_Guidance.pdf"
@@ -267,11 +228,6 @@ Base the recommendations on the student's provided degree, skills and interest.
 
     story = []
 
-
-    # =========================
-    # PDF Title
-    # =========================
-
     story.append(
         Paragraph(
             "AI Career Guidance Report",
@@ -282,11 +238,6 @@ Base the recommendations on the student's provided degree, skills and interest.
     story.append(
         Spacer(1, 20)
     )
-
-
-    # =========================
-    # Student Information
-    # =========================
 
     story.append(
         Paragraph(
@@ -321,11 +272,6 @@ Base the recommendations on the student's provided degree, skills and interest.
         Spacer(1, 20)
     )
 
-
-    # =========================
-    # AI Guidance Heading
-    # =========================
-
     story.append(
         Paragraph(
             "AI Career Guidance",
@@ -337,12 +283,7 @@ Base the recommendations on the student's provided degree, skills and interest.
         Spacer(1, 10)
     )
 
-
-    # =========================
-    # Add AI Response to PDF
-    # =========================
-
-    for line in response.text.split("\n"):
+    for line in full_response.split("\n"):
 
         line = line.strip()
 
@@ -366,17 +307,7 @@ Base the recommendations on the student's provided degree, skills and interest.
                 Spacer(1, 8)
             )
 
-
-    # =========================
-    # Build PDF
-    # =========================
-
     doc.build(story)
-
-
-    # =========================
-    # Read PDF
-    # =========================
 
     with open(
         pdf_file,
@@ -384,11 +315,6 @@ Base the recommendations on the student's provided degree, skills and interest.
     ) as file:
 
         pdf_data = file.read()
-
-
-    # =========================
-    # PDF Download
-    # =========================
 
     st.download_button(
         label="📥 Download Guidance (PDF)",

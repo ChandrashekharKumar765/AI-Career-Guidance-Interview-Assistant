@@ -36,15 +36,7 @@ client = genai.Client(
     api_key=st.secrets["GEMINI_API_KEY"]
 )
 
-
-# =========================
-# Get Logged-in User
-# =========================
-
-username = st.session_state.get(
-    "username",
-    "User"
-)
+username = st.session_state.get("username", "User")
 
 
 # =========================
@@ -54,7 +46,7 @@ username = st.session_state.get(
 st.title("🎤 AI Interview Assistant")
 
 st.write(
-    "Generate AI-powered interview questions and preparation guidance."
+    "Generate detailed AI-powered interview questions and preparation guidance."
 )
 
 
@@ -62,9 +54,7 @@ st.write(
 # User Details
 # =========================
 
-name = st.text_input(
-    "Your Name"
-)
+name = st.text_input("Your Name")
 
 role = st.selectbox(
     "Job Role",
@@ -96,14 +86,10 @@ if st.button(
     use_container_width=True
 ):
 
-    # =========================
-    # Validate Input
-    # =========================
-
     if not name:
 
         st.warning(
-            "⚠️ Please enter your name before starting the interview."
+            "⚠️ Please enter your name."
         )
 
         st.stop()
@@ -114,87 +100,79 @@ if st.button(
     # =========================
 
     prompt = f"""
-You are a professional AI Interviewer.
+You are an expert technical interviewer.
 
 Candidate Name: {name}
 Job Role: {role}
-Difficulty Level: {level}
+Difficulty: {level}
 
-Create a practical interview preparation guide specifically for this
-job role and difficulty level.
+Create a detailed interview preparation report.
 
-Use exactly these sections:
+Include:
 
-1. Important Interview Questions
-Generate 5 important questions.
-
-For each question provide:
-- Interview Question
-- Expected Answer
-- One short explanation of what the interviewer is looking for
-
-Include questions appropriate to the selected difficulty level.
+1. 10 important interview questions
+   - Give the expected answer after each question.
+   - Include a mixture of conceptual, technical and practical questions.
 
 2. Interview Tips
-Give 3 practical tips specifically useful for this role.
+   - Give at least 5 useful tips.
 
-3. Common Mistakes to Avoid
-Give 3 common mistakes candidates make in this type of interview
-and explain briefly how to avoid them.
+3. Common Mistakes
+   - Give at least 5 mistakes candidates should avoid.
 
-4. Final Preparation Tips
-Give 3 practical things the candidate should do before the interview.
+4. Final Preparation Advice
+   - Give a practical preparation strategy.
 
-Make the questions role-specific rather than generic.
+Make the questions relevant to the selected job role and difficulty.
 
-For technical roles, include a good balance of:
-- Technical concepts
-- Programming/problem-solving
-- Projects
-- Practical application
-
-Keep the response focused and easy to study,
-but provide enough detail for the candidate to actually prepare.
-
-Use clear headings, numbered questions and bullet points.
-Do not give unnecessary motivational content.
+Use clear headings, numbering and bullet points.
+Give useful explanations rather than extremely short answers.
 """
 
 
     # =========================
-    # Gemini AI
+    # Streaming Response
     # =========================
 
-    with st.spinner(
-        "🤖 AI is preparing your interview..."
-    ):
+    st.divider()
+    st.subheader("🎯 AI Interview Preparation")
 
-        try:
+    response_placeholder = st.empty()
 
-            response = client.models.generate_content(
-                model="gemini-3.6-flash",
-                contents=prompt
-            )
+    full_response = ""
 
-        except Exception as e:
+    try:
 
-            st.error(
-                "⚠️ Gemini AI is temporarily unavailable. "
-                "Please try again."
-            )
+        for chunk in client.models.generate_content_stream(
+            model="gemini-3.5-flash-lite",
+            contents=prompt
+        ):
 
-            st.stop()
+            if chunk.text:
+
+                full_response += chunk.text
+
+                response_placeholder.markdown(
+                    full_response
+                )
+
+    except Exception as e:
+
+        st.error(
+            f"⚠️ Gemini AI Error: {e}"
+        )
+
+        st.stop()
 
 
     # =========================
     # Check Response
     # =========================
 
-    if response is None or not response.text:
+    if not full_response.strip():
 
         st.error(
-            "⚠️ Gemini did not return a response. "
-            "Please try again."
+            "⚠️ Gemini did not return a response."
         )
 
         st.stop()
@@ -209,23 +187,9 @@ Do not give unnecessary motivational content.
         name,
         role,
         level,
-        response.text
+        full_response
     )
 
-
-    # =========================
-    # Display Result
-    # =========================
-
-    st.divider()
-
-    st.subheader(
-        "🎯 AI Interview Preparation"
-    )
-
-    st.write(
-        response.text
-    )
 
     st.divider()
 
@@ -240,14 +204,14 @@ Do not give unnecessary motivational content.
 
     st.download_button(
         label="📥 Download Questions (TXT)",
-        data=response.text,
+        data=full_response,
         file_name="Interview_Questions.txt",
         mime="text/plain"
     )
 
 
     # =========================
-    # Create PDF
+    # PDF Report
     # =========================
 
     pdf_file = "Interview_Questions.pdf"
@@ -261,11 +225,6 @@ Do not give unnecessary motivational content.
 
     story = []
 
-
-    # =========================
-    # PDF Title
-    # =========================
-
     story.append(
         Paragraph(
             "AI Interview Preparation Report",
@@ -276,11 +235,6 @@ Do not give unnecessary motivational content.
     story.append(
         Spacer(1, 20)
     )
-
-
-    # =========================
-    # Candidate Information
-    # =========================
 
     story.append(
         Paragraph(
@@ -315,11 +269,6 @@ Do not give unnecessary motivational content.
         Spacer(1, 20)
     )
 
-
-    # =========================
-    # AI Preparation Heading
-    # =========================
-
     story.append(
         Paragraph(
             "AI Interview Preparation",
@@ -331,12 +280,7 @@ Do not give unnecessary motivational content.
         Spacer(1, 10)
     )
 
-
-    # =========================
-    # Add AI Response to PDF
-    # =========================
-
-    for line in response.text.split("\n"):
+    for line in full_response.split("\n"):
 
         line = line.strip()
 
@@ -360,17 +304,7 @@ Do not give unnecessary motivational content.
                 Spacer(1, 8)
             )
 
-
-    # =========================
-    # Build PDF
-    # =========================
-
     doc.build(story)
-
-
-    # =========================
-    # Read PDF
-    # =========================
 
     with open(
         pdf_file,
@@ -378,11 +312,6 @@ Do not give unnecessary motivational content.
     ) as file:
 
         pdf_data = file.read()
-
-
-    # =========================
-    # PDF Download
-    # =========================
 
     st.download_button(
         label="📥 Download Questions (PDF)",
