@@ -24,6 +24,31 @@ def hash_password(password):
 
 
 # =========================
+# Database Migration Helper
+# =========================
+
+def add_column_if_missing(cursor, table_name, column_name, column_type):
+
+    cursor.execute(
+        f"PRAGMA table_info({table_name})"
+    )
+
+    columns = [
+        column[1]
+        for column in cursor.fetchall()
+    ]
+
+    if column_name not in columns:
+
+        cursor.execute(
+            f"""
+            ALTER TABLE {table_name}
+            ADD COLUMN {column_name} {column_type}
+            """
+        )
+
+
+# =========================
 # Create Database
 # =========================
 
@@ -32,7 +57,10 @@ def create_database():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
+    # =========================
     # Resume History
+    # =========================
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS resume_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,7 +71,10 @@ def create_database():
     )
     """)
 
+    # =========================
     # Career History
+    # =========================
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS career_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,7 +88,10 @@ def create_database():
     )
     """)
 
+    # =========================
     # Interview History
+    # =========================
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS interview_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,7 +104,10 @@ def create_database():
     )
     """)
 
+    # =========================
     # Users
+    # =========================
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -79,6 +116,31 @@ def create_database():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
+
+    # =========================
+    # Automatic Migration
+    # =========================
+
+    add_column_if_missing(
+        cursor,
+        "resume_history",
+        "username",
+        "TEXT"
+    )
+
+    add_column_if_missing(
+        cursor,
+        "career_history",
+        "username",
+        "TEXT"
+    )
+
+    add_column_if_missing(
+        cursor,
+        "interview_history",
+        "username",
+        "TEXT"
+    )
 
     conn.commit()
     conn.close()
@@ -99,10 +161,14 @@ def register_user(username, password):
 
         cursor.execute(
             """
-            INSERT INTO users (username, password)
+            INSERT INTO users
+            (username, password)
             VALUES (?, ?)
             """,
-            (username, password_hash)
+            (
+                username,
+                password_hash
+            )
         )
 
         conn.commit()
@@ -133,26 +199,31 @@ def verify_user(username, password):
         """
         SELECT username
         FROM users
-        WHERE username = ? AND password = ?
+        WHERE username = ?
+        AND password = ?
         """,
-        (username, password_hash)
+        (
+            username,
+            password_hash
+        )
     )
 
     user = cursor.fetchone()
 
     conn.close()
 
-    if user:
-        return True
-
-    return False
+    return user is not None
 
 
 # =========================
 # Save Resume
 # =========================
 
-def save_resume(username, file_name, analysis):
+def save_resume(
+    username,
+    file_name,
+    analysis
+):
 
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
@@ -163,7 +234,11 @@ def save_resume(username, file_name, analysis):
         (username, file_name, analysis)
         VALUES (?, ?, ?)
         """,
-        (username, file_name, analysis)
+        (
+            username,
+            file_name,
+            analysis
+        )
     )
 
     conn.commit()
